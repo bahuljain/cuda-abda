@@ -11,6 +11,8 @@ import pycuda.compiler
 import pycuda.autoinit
 import numpy
 from math import pi,cos,sin
+import Image
+import sys
 
 _rotation_kernel_source = """
 texture<float, 2> tex;
@@ -112,9 +114,6 @@ def rotate_image( a, resize = 1.5, angle = 20., interpolation = "linear", blocks
     return output
 
 if __name__ == '__main__':
-    import Image
-    import sys
-    
     def main( ):
         if len(sys.argv) != 2:
             print "You should really read the source...\n\nUsage: rotate.py <Imagename>\n"
