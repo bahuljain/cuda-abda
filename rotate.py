@@ -11,7 +11,7 @@ import pycuda.compiler
 import pycuda.autoinit
 import numpy
 from math import pi,cos,sin
-import Image
+from PIL import Image
 import sys
 
 _rotation_kernel_source = """
