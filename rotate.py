@@ -6,6 +6,7 @@ from math import pi,cos,sin
 from PIL import Image
 import sys
 import os
+import time
 
 _rotation_kernel_source = """
 texture<float, 2> tex;
@@ -122,6 +123,7 @@ def ensure_dir(file):
         os.makedirs(d)
 
 if __name__ == '__main__':
+    start = time.time()
     count = 0
     for root, dirs, files in os.walk('./data/', topdown=False):
         for name in files:
@@ -136,4 +138,6 @@ if __name__ == '__main__':
             rotimg.save(output_filename)
             rotimg.show()
             count += 1
-            print "#" + `count` + ": " + input_filename
+            print "#" + `count` + ": " + input_filename + " rotated"
+
+    print "\nTime Elapsed: " + `(time.time() - start)`
