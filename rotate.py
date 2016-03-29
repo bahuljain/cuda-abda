@@ -47,7 +47,7 @@ mod_copy_texture=pycuda.compiler.SourceModule( _rotation_kernel_source )
 copy_texture_func = mod_copy_texture.get_function("copy_texture_kernel")
 texref = mod_copy_texture.get_texref("tex")
 
-def rotate_image( a, resize = 1.5, angle = 20., interpolation = "linear", blocks = (16,16,1)  ):
+def rotate_image( a, resize = 1.5, angle = 180., interpolation = "linear", blocks = (16,16,1)  ):
     """
     Rotates the array. The new array has the new size and centers the
     picture in the middle.
@@ -116,9 +116,24 @@ def rotate_image_file(filename):
     rotimg = Image.fromarray(irot,mode="L")
     return rotimg
 
-if __name__ == '__main__':
-    rotimg = rotate_image_file('original.tiff')
+def ensure_dir(file):
+    d = os.path.dirname(file)
+    if not os.path.exists(d):
+        os.makedirs(d)
 
-    # Save and display
-    rotimg.save("rotated.png")
-    rotimg.show()
+if __name__ == '__main__':
+    count = 0
+    for root, dirs, files in os.walk('./data/', topdown=False):
+        for name in files:
+            input_filename = (os.path.join(root, name))
+
+            rotimg = rotate_image_file(input_filename)
+
+            output_filename = (os.path.join('./output/' +root[7:], name))
+            ensure_dir(filename)
+
+            # Save and display
+            rotimg.save(output_filename)
+            rotimg.show()
+            count += 1
+            print "#" + `count` + ": " + input_filename
