@@ -130,7 +130,7 @@ if __name__ == '__main__':
             rotimg = rotate_image_file(input_filename)
 
             output_filename = (os.path.join('./output/' +root[7:], name))
-            ensure_dir(filename)
+            ensure_dir(output_filename)
 
             # Save and display
             rotimg.save(output_filename)
