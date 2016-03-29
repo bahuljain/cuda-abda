@@ -1,11 +1,3 @@
-#!python 
-#!/usr/bin/env python -tt
-# encoding: utf-8
-#
-# Created by Holger Rapp on 2009-03-11.
-# HolgerRapp@gmx.net
-#
-
 import pycuda.driver as cuda
 import pycuda.compiler
 import pycuda.autoinit
@@ -13,13 +5,14 @@ import numpy
 from math import pi,cos,sin
 from PIL import Image
 import sys
+import os
 
 _rotation_kernel_source = """
 texture<float, 2> tex;
 
 __global__ void copy_texture_kernel(
-    const float resize_val, 
-    const float alpha, 
+    const float resize_val,
+    const float alpha,
     unsigned short oldiw, unsigned short oldih,
     unsigned short newiw, unsigned short newih,
     unsigned char* data) {
@@ -27,22 +20,22 @@ __global__ void copy_texture_kernel(
         // calculate pixel idx
         unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
         unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
-        
+
         // We might be outside the reachable pixels. Don't do anything
         if( (x >= newiw) || (y >= newih) )
             return;
-        
+
         // calculate offset into destination array
         unsigned int didx = y * newiw + x;
-        
+
         // calculate offset into source array (be aware of rotation and scaling)
         float xmiddle = (x-newiw/2.) / resize_val;
         float ymiddle = (y-newih/2.) / resize_val;
         float sx = ( xmiddle*cos(alpha)+ymiddle*sin(alpha) + oldiw/2.) ;
         float sy = ( -xmiddle*sin(alpha)+ymiddle*cos(alpha) + oldih/2.);
-        
-        if( (sx < 0) || (sx >= oldiw) || (sy < 0) || (sy >= oldih) ) { 
-            data[didx] = 255; 
+
+        if( (sx < 0) || (sx >= oldiw) || (sy < 0) || (sy >= oldih) ) {
+            data[didx] = 255;
             return;
         }
 
@@ -58,7 +51,7 @@ def rotate_image( a, resize = 1.5, angle = 20., interpolation = "linear", blocks
     """
     Rotates the array. The new array has the new size and centers the
     picture in the middle.
-    
+
     a             - array (2-dim)
     resize        - new_image w/old_image w
     angle         - degrees to rotate the image
@@ -69,8 +62,8 @@ def rotate_image( a, resize = 1.5, angle = 20., interpolation = "linear", blocks
     returns: a new array with dtype=uint8 containing the rotated image
     """
     angle = angle/180. *pi
-    
-    # Convert this image to float. Unsigned int texture gave 
+
+    # Convert this image to float. Unsigned int texture gave
     # strange results for me. This conversion is slow though :(
     a = a.astype("float32")
 
@@ -85,17 +78,17 @@ def rotate_image( a, resize = 1.5, angle = 20., interpolation = "linear", blocks
         int(numpy.ceil(max(ys)-min(ys))*resize),
         int(numpy.ceil(max(xs)-min(xs))*resize),
     )
-    
+
     # Now generate the cuda texture
     cuda.matrix_to_texref(a, texref, order="C")
-    
+
     # We could set the next if we wanted to address the image
     # in normalized coordinates ( 0 <= coordinate < 1.)
     # texref.set_flags(cuda.TRSF_NORMALIZED_COORDINATES)
     if interpolation == "linear":
         texref.set_filter_mode(cuda.filter_mode.LINEAR)
 
-    # Calculate the gridsize. This is entirely given by the size of our image. 
+    # Calculate the gridsize. This is entirely given by the size of our image.
     gridx = new_image_dim[0]/blocks[0] if \
             new_image_dim[0]%blocks[0]==1 else new_image_dim[0]/blocks[0] +1
     gridy = new_image_dim[1]/blocks[1] if \
@@ -103,32 +96,29 @@ def rotate_image( a, resize = 1.5, angle = 20., interpolation = "linear", blocks
 
     # Get the output image
     output = numpy.zeros(new_image_dim,dtype="uint8")
-    
+
     # Call the kernel
     copy_texture_func(
         numpy.float32(resize), numpy.float32(angle),
         numpy.uint16(a.shape[1]), numpy.uint16(a.shape[0]),
         numpy.uint16(new_image_dim[1]), numpy.uint16(new_image_dim[0]),
             cuda.Out(output),texrefs=[texref],block=blocks,grid=(gridx,gridy))
-    
+
     return output
 
+def rotate_image_file(filename):
+    # Open, convert to grayscale, convert to numpy array
+    img = Image.open(filename).convert("L")
+    i = numpy.fromstring(img.tostring(),dtype="uint8").reshape(img.size[1],img.size[0])
+
+    # Rotate & convert back to PIL Image
+    irot = rotate_image(i)
+    rotimg = Image.fromarray(irot,mode="L")
+    return rotimg
+
 if __name__ == '__main__':
-    def main( ):
-        if len(sys.argv) != 2:
-            print "You should really read the source...\n\nUsage: rotate.py <Imagename>\n"
-            sys.exit(-1)
+    rotate_image_file('original.tiff')
 
-        # Open, convert to grayscale, convert to numpy array
-        img = Image.open(sys.argv[1]).convert("L")
-        i = numpy.fromstring(img.tostring(),dtype="uint8").reshape(img.size[1],img.size[0])
-        
-        # Rotate & convert back to PIL Image
-        irot = rotate_image(i)
-        rotimg = Image.fromarray(irot,mode="L")
-
-        # Save and display
-        rotimg.save("rotated.png")
-        rotimg.show()
-    
-    main()
+    # Save and display
+    rotimg.save("rotated.png")
+    rotimg.show()
