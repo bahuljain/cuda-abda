@@ -117,7 +117,7 @@ def rotate_image_file(filename):
     return rotimg
 
 if __name__ == '__main__':
-    rotate_image_file('original.tiff')
+    rotimg = rotate_image_file('original.tiff')
 
     # Save and display
     rotimg.save("rotated.png")
