@@ -1,5 +1,7 @@
 # CUDA - Homework 3
 
+Bahul Jain - bkj2111
+
 ### Instructions
 
 - After launching an EC2 instance running a GPU and with CUDA installed on it, I
@@ -36,5 +38,15 @@ to rotate it by 180 degrees to make them straight.
 
         rotimg = rotate_image_file(input_filename)
 
-        output_filename = (os.path.join('./output/' +root[7:], name))
+        output_filename = (os.path.join('./output/' + root[7:], name))
   ```
+
+- To run the given code, you need to copy the data folder in the project folder and the following command.
+
+  ```bash
+  python rotate.py > logs.txt
+  ```
+
+- The output folder will be automatically generated with the rotated images.
+
+- The above command also generates a logs.txt file with all the logs and the time taken to perform the given task of rotating such huge number of images.
